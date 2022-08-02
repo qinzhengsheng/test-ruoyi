@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.InvoiceMapper">
+
+
+    <select id="getInvoiceInfo" resultType="com.ruoyi.common.core.domain.vo.InvoiceInfoVO">
+        select vehicle_identity_no as vin, invoice_code, invoice_number as invoiceNo,
+        total_price_lower_case as totalAmount, amount, tax_amount as tax, invoice_date, status
+        from output_invoice_motor
+        <where>
+            <if test="vin != null and vin != ''">
+                AND vehicle_identity_no like concat('%', #{vin}, '%')
+            </if>
+            <if test="startDate != null and startDate != ''"><!-- 开始时间检索 -->
+                and invoice_date &gt;= STR_TO_DATE(#{startDate},'%Y/%m/%d')
+            </if>
+            <if test="endDate != null and endDate != ''"><!-- 结束时间检索 -->
+                and invoice_date &lt;= STR_TO_DATE(#{endDate},'%Y/%m/%d')
+            </if>
+        </where>
+        order by invoice_date DESC
+    </select>
+
+</mapper>
