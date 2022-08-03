@@ -27,7 +27,6 @@ public class InvoiceServiceImpl extends ServiceImpl<InvoiceMapper, OutputInvoice
             throw new ServiceException("必须有一个参数");
         }
         List<InvoiceInfoVO> invoiceInfo = baseMapper.getInvoiceInfo(searchReq);
-
         return invoiceInfo;
     }
 
