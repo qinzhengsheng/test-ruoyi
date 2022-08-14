@@ -1,28 +1,19 @@
-package com.ruoyi.common.utils;
+package com.ruoyi.common.utils.pdf;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.zxing.*;
-import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.HybridBinarizer;
+
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cms.*;
-import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.dom4j.DocumentException;
+
 import org.springframework.web.multipart.MultipartFile;
-import pwc.taxtech.biz.common.dto.OperationResultDto;
-import pwc.taxtech.biz.common.service.CKHelper;
-import pwc.taxtech.biz.common.service.FileUploadService;
-import pwc.taxtech.biz.common.util.CommonUtils;
+
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageOutputStream;
@@ -124,6 +115,17 @@ public class PDFReaderUtil {
         return null;
     }
 
+    public static void main(String[] args) {
+
+        try {
+            JSONObject jsonObject = readReceiptPdfFile(new File("C:\\Users\\Dereck Z Qin\\Downloads\\demo1\\达能不工作的pdf\\20220712 82717260.pdf"));
+            System.out.println(jsonObject);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
     public static JSONArray readReceiptPdfFile2(File file) throws Exception {
         List<ReceiptPosition> mainList = null;
         List<List<ReceiptPosition>> addendumList = new ArrayList<>();
@@ -131,7 +133,7 @@ public class PDFReaderUtil {
         JSONArray result = new JSONArray();
 
         try {
-            document = PDDocument.load(file);
+            document = Loader.loadPDF(file);
             int pageCount = document.getNumberOfPages();
             PDFTextStripperNew stripperMain;
             if (pageCount == 1) {
@@ -191,7 +193,7 @@ public class PDFReaderUtil {
         //multipartFile为multipartFile文件类型，将文件转化为文件流被PDDocument加载
         PDDocument document = null;
         try {
-            document = PDDocument.load(multipartFile.getInputStream());
+            document = Loader.loadPDF(multipartFile.getInputStream());
 
             document.getClass();
 //使用PDFTextStripper 工具
@@ -213,7 +215,7 @@ public class PDFReaderUtil {
         PDDocument document = null;
 
         try {
-            document = PDDocument.load(file);
+            document = Loader.loadPDF(file);
             int pageCount = document.getNumberOfPages();
             PDFTextStripperNew stripperMain;
             if (pageCount == 1) {
@@ -1311,125 +1313,124 @@ public class PDFReaderUtil {
         return str;
     }
 
-    public static String getQRCodeInfoFromPdf(String filename) {
-        try {
-            return extractImages(pdfFileToImage(filename));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        } catch (DocumentException e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
+//    public static String getQRCodeInfoFromPdf(String filename) {
+//        try {
+//            return extractImages(pdfFileToImage(filename));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return "";
+//        } catch (DocumentException e) {
+//            e.printStackTrace();
+//            return "";
+//        }
+//    }
 
-    private static String saveImgFile(BufferedImage image) {
-        String targetPath = FileUploadService.getNowPath() + "/" + CommonUtils.getUUID() + ".png";
-        try {
-            InputStream byteInputStream = null;
-            image.flush();
-            ByteArrayOutputStream bs = new ByteArrayOutputStream();
-            ImageOutputStream imOut;
-            imOut = ImageIO.createImageOutputStream(bs);
-            ImageIO.write(image, "png", imOut);
-            byteInputStream = new ByteArrayInputStream(bs.toByteArray());
-            byteInputStream.close();
+//    private static String saveImgFile(BufferedImage image) {
+//        String targetPath = FileUploadService.getNowPath() + "/" + CommonUtils.getUUID() + ".png";
+//        try {
+//            InputStream byteInputStream = null;
+//            image.flush();
+//            ByteArrayOutputStream bs = new ByteArrayOutputStream();
+//            ImageOutputStream imOut;
+//            imOut = ImageIO.createImageOutputStream(bs);
+//            ImageIO.write(image, "png", imOut);
+//            byteInputStream = new ByteArrayInputStream(bs.toByteArray());
+//            byteInputStream.close();
+//
+//            File uploadFile = new File(targetPath);
+//            FileOutputStream fops;
+//            fops = new FileOutputStream(uploadFile);
+//            fops.write(readInputStream(byteInputStream));
+//            fops.flush();
+//            fops.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "";
+//        }
+//        return targetPath;
+//    }
 
-            File uploadFile = new File(targetPath);
-            FileOutputStream fops;
-            fops = new FileOutputStream(uploadFile);
-            fops.write(readInputStream(byteInputStream));
-            fops.flush();
-            fops.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "";
-        }
-        return targetPath;
-    }
-
-    public static List<String> pdfFileToImages2(String filename) throws Exception {
-        //pdf文件
-        File pdffile = new File(filename);
-        // 转成的 png 文件存储全路径及文件名
-        List<String> filePathList = new ArrayList<>();
-        try {
-            try (PDDocument doc = PDDocument.load(pdffile);) {
-                PDFRenderer renderer = new PDFRenderer(doc);
-                int pageCount = doc.getNumberOfPages();
-                int pageIndex = 0;
-                if (pageCount > 0) {
-                    while (pageIndex < pageCount) {
-                        BufferedImage image = renderer.renderImage(pageIndex, 2.0f);
-                        String filePath = saveImgFile(image);
-                        if (!CKHelper.isEmpty(filePath)) {
-                            filePathList.add(filePath);
-                        }
-                        pageIndex++;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw e;
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
-            }
-//            finally {
-//                instream.close();
+//    public static List<String> pdfFileToImages2(String filename) throws Exception {
+//        //pdf文件
+//        File pdffile = new File(filename);
+//        // 转成的 png 文件存储全路径及文件名
+//        List<String> filePathList = new ArrayList<>();
+//        try {
+//            try (PDDocument doc = Loader.loadPDF(pdffile);) {
+//                PDFRenderer renderer = new PDFRenderer(doc);
+//                int pageCount = doc.getNumberOfPages();
+//                int pageIndex = 0;
+//                if (pageCount > 0) {
+//                    while (pageIndex < pageCount) {
+//                        BufferedImage image = renderer.renderImage(pageIndex, 2.0f);
+//                        String filePath = saveImgFile(image);
+//                        if (!CKHelper.isEmpty(filePath)) {
+//                            filePathList.add(filePath);
+//                        }
+//                        pageIndex++;
+//                    }
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                throw e;
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                throw e;
 //            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
-
-        return filePathList;
-    }
+////            finally {
+////                instream.close();
+////            }
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            throw e;
+//        }
+//
+//        return filePathList;
+//    }
 
     /**
      * pdf 转 png
      */
-    public static String pdfFileToImage(String filename) {
-        //pdf文件
-        File pdffile = new File(filename);
-        // 转成的 png 文件存储全路径及文件名
-        String targetPath = FileUploadService.getNowPath() + "/" + CommonUtils.getUUID() + ".png";
-        try {
-//            FileInputStream instream = new FileInputStream(pdffile);
-            InputStream byteInputStream = null;
-            try (PDDocument doc = PDDocument.load(pdffile);) {
-                PDFRenderer renderer = new PDFRenderer(doc);
-                int pageCount = doc.getNumberOfPages();
-                if (pageCount > 0) {
-                    BufferedImage image = renderer.renderImage(0, 2.0f);
-                    image.flush();
-                    ByteArrayOutputStream bs = new ByteArrayOutputStream();
-                    ImageOutputStream imOut;
-                    imOut = ImageIO.createImageOutputStream(bs);
-                    ImageIO.write(image, "png", imOut);
-                    byteInputStream = new ByteArrayInputStream(bs.toByteArray());
-                    byteInputStream.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-//            finally {
-//                instream.close();
+//    public static String pdfFileToImage(String filename) {
+//        //pdf文件
+//        File pdffile = new File(filename);
+//        // 转成的 png 文件存储全路径及文件名
+//        String targetPath = FileUploadService.getNowPath() + "/" + CommonUtils.getUUID() + ".png";
+//        try {
+////            FileInputStream instream = new FileInputStream(pdffile);
+//            InputStream byteInputStream = null;
+//            try (PDDocument doc = Loader.loadPDF(pdffile);) {
+//                PDFRenderer renderer = new PDFRenderer(doc);
+//                int pageCount = doc.getNumberOfPages();
+//                if (pageCount > 0) {
+//                    BufferedImage image = renderer.renderImage(0, 2.0f);
+//                    image.flush();
+//                    ByteArrayOutputStream bs = new ByteArrayOutputStream();
+//                    ImageOutputStream imOut;
+//                    imOut = ImageIO.createImageOutputStream(bs);
+//                    ImageIO.write(image, "png", imOut);
+//                    byteInputStream = new ByteArrayInputStream(bs.toByteArray());
+//                    byteInputStream.close();
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
 //            }
-            File uploadFile = new File(targetPath);
-            FileOutputStream fops;
-            fops = new FileOutputStream(uploadFile);
-            fops.write(readInputStream(byteInputStream));
-            fops.flush();
-            fops.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return targetPath;
-    }
-
+////            finally {
+////                instream.close();
+////            }
+//            File uploadFile = new File(targetPath);
+//            FileOutputStream fops;
+//            fops = new FileOutputStream(uploadFile);
+//            fops.write(readInputStream(byteInputStream));
+//            fops.flush();
+//            fops.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return targetPath;
+//    }
     private static byte[] readInputStream(InputStream inStream) throws Exception {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
@@ -1444,27 +1445,27 @@ public class PDFReaderUtil {
     /**
      * 识别 png图片中的二维码信息
      */
-    public static String extractImages(String filename) throws IOException, DocumentException {
-        String returnResult = "";
-        MultiFormatReader multiFormatReader = new MultiFormatReader();
-        File file = new File(filename);
-        BufferedImage image = ImageIO.read(file);
-        // 定义二维码参数
-        Map hints = new HashMap();
-        hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
-
-        // 获取读取二维码结果
-        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(image)));
-        Result result = null;
-        try {
-            result = multiFormatReader.decode(binaryBitmap, hints);
-            returnResult = result.getText();
-            file.delete();
-        } catch (NotFoundException e) {
-            e.printStackTrace();
-        }
-        return returnResult;
-    }
+//    public static String extractImages(String filename) throws IOException, DocumentException {
+//        String returnResult = "";
+//        MultiFormatReader multiFormatReader = new MultiFormatReader();
+//        File file = new File(filename);
+//        BufferedImage image = ImageIO.read(file);
+//        // 定义二维码参数
+//        Map hints = new HashMap();
+//        hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
+//
+//        // 获取读取二维码结果
+//        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(image)));
+//        Result result = null;
+//        try {
+//            result = multiFormatReader.decode(binaryBitmap, hints);
+//            returnResult = result.getText();
+//            file.delete();
+//        } catch (NotFoundException e) {
+//            e.printStackTrace();
+//        }
+//        return returnResult;
+//    }
 
     /**
      * pdf电子签章验签
@@ -1476,93 +1477,92 @@ public class PDFReaderUtil {
      * @throws OperatorCreationException
      * @throws GeneralSecurityException
      */
-    public static OperationResultDto validateSignatures(byte[] pdfByte) throws IOException, CMSException {
-        OperationResultDto resultDto = new OperationResultDto();
-        resultDto.setResult(true);
-
-        try (PDDocument pdfDoc = PDDocument.load(pdfByte)) {
-            List<PDSignature> signatures = pdfDoc.getSignatureDictionaries();
-            for (PDSignature signature : signatures) {
-                String subFilter = signature.getSubFilter();
-                byte[] signatureAsBytes = signature.getContents(pdfByte);
-                byte[] signedContentAsBytes = signature.getSignedContent(pdfByte);
-
-                CMSSignedData cms = null;
-                if ("adbe.pkcs7.detached".equals(subFilter) || "ETSI.CAdES.detached".equals(subFilter)) {
-                    try {
-                        cms = new CMSSignedData(new CMSProcessableByteArray(signedContentAsBytes), signatureAsBytes);
-                    } catch (CMSException e) {
-                        resultDto.setResult(false);
-                        resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
-                    }
-                } else if ("adbe.pkcs7.sha1".equals(subFilter)) {
-                    MessageDigest md = null;
-                    try {
-                        md = MessageDigest.getInstance("SHA1");
-                    } catch (NoSuchAlgorithmException e) {
-                        resultDto.setResult(false);
-                        resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
-                        return resultDto;
-                    }
-                    byte[] calculatedDigest = md.digest(signedContentAsBytes);
-                    byte[] signedDigest = (byte[]) cms.getSignedContent().getContent();
-                    boolean digestsMatch = Arrays.equals(calculatedDigest, signedDigest);
-                    if (digestsMatch)
-                        System.out.println("    Document SHA1 digest matches.");
-                    else {
-                        resultDto.setResult(false);
-                        resultDto.setResultMsg("!!! Document SHA1 digest does not match!");
-                        return resultDto;
-                    }
-
-                    cms = new CMSSignedData(new ByteArrayInputStream(signatureAsBytes));
-                } else if ("adbe.x509.rsa.sha1".equals(subFilter) || "ETSI.RFC3161".equals(subFilter)) {
-                    resultDto.setResult(false);
-                    resultDto.setResultMsg("!!! SubFilter %s not yet supported.\n" + subFilter);
-
-                    return resultDto;
-                } else if (subFilter != null) {
-                    resultDto.setResult(false);
-                    resultDto.setResultMsg("!!! Unknown SubFilter %s.\n" + subFilter);
-                    return resultDto;
-                } else {
-                    resultDto.setResult(false);
-                    resultDto.setResultMsg("!!! Missing SubFilter.");
-                    return resultDto;
-
-                }
-
-                SignerInformation signerInfo = (SignerInformation) cms.getSignerInfos().getSigners().iterator().next();
-                X509CertificateHolder cert = (X509CertificateHolder) cms.getCertificates().getMatches(signerInfo.getSID())
-                        .iterator().next();
-                SignerInformationVerifier verifier = null;
-                try {
-                    verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(new BouncyCastleProvider()).build(cert);
-                } catch (OperatorCreationException e) {
-                    resultDto.setResult(false);
-                    resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
-                    return resultDto;
-                } catch (CertificateException e) {
-                    resultDto.setResult(false);
-                    resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
-                    return resultDto;
-                }
-
-                boolean verifyResult = signerInfo.verify(verifier);
-                if (verifyResult) {
-                    resultDto.setResult(true);
-                    resultDto.setResultMsg("");
-                    return resultDto;
-                } else {
-                    resultDto.setResult(false);
-                    resultDto.setResultMsg("!!! Signature verification failed!");
-                    return resultDto;
-                }
-            }
-        }
-        return resultDto;
-    }
-
+//    public static OperationResultDto validateSignatures(byte[] pdfByte) throws IOException, CMSException {
+//        OperationResultDto resultDto = new OperationResultDto();
+//        resultDto.setResult(true);
+//
+//        try (PDDocument pdfDoc = Loader.loadPDF(pdfByte)) {
+//            List<PDSignature> signatures = pdfDoc.getSignatureDictionaries();
+//            for (PDSignature signature : signatures) {
+//                String subFilter = signature.getSubFilter();
+//                byte[] signatureAsBytes = signature.getContents(pdfByte);
+//                byte[] signedContentAsBytes = signature.getSignedContent(pdfByte);
+//
+//                CMSSignedData cms = null;
+//                if ("adbe.pkcs7.detached".equals(subFilter) || "ETSI.CAdES.detached".equals(subFilter)) {
+//                    try {
+//                        cms = new CMSSignedData(new CMSProcessableByteArray(signedContentAsBytes), signatureAsBytes);
+//                    } catch (CMSException e) {
+//                        resultDto.setResult(false);
+//                        resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
+//                    }
+//                } else if ("adbe.pkcs7.sha1".equals(subFilter)) {
+//                    MessageDigest md = null;
+//                    try {
+//                        md = MessageDigest.getInstance("SHA1");
+//                    } catch (NoSuchAlgorithmException e) {
+//                        resultDto.setResult(false);
+//                        resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
+//                        return resultDto;
+//                    }
+//                    byte[] calculatedDigest = md.digest(signedContentAsBytes);
+//                    byte[] signedDigest = (byte[]) cms.getSignedContent().getContent();
+//                    boolean digestsMatch = Arrays.equals(calculatedDigest, signedDigest);
+//                    if (digestsMatch)
+//                        System.out.println("    Document SHA1 digest matches.");
+//                    else {
+//                        resultDto.setResult(false);
+//                        resultDto.setResultMsg("!!! Document SHA1 digest does not match!");
+//                        return resultDto;
+//                    }
+//
+//                    cms = new CMSSignedData(new ByteArrayInputStream(signatureAsBytes));
+//                } else if ("adbe.x509.rsa.sha1".equals(subFilter) || "ETSI.RFC3161".equals(subFilter)) {
+//                    resultDto.setResult(false);
+//                    resultDto.setResultMsg("!!! SubFilter %s not yet supported.\n" + subFilter);
+//
+//                    return resultDto;
+//                } else if (subFilter != null) {
+//                    resultDto.setResult(false);
+//                    resultDto.setResultMsg("!!! Unknown SubFilter %s.\n" + subFilter);
+//                    return resultDto;
+//                } else {
+//                    resultDto.setResult(false);
+//                    resultDto.setResultMsg("!!! Missing SubFilter.");
+//                    return resultDto;
+//
+//                }
+//
+//                SignerInformation signerInfo = (SignerInformation) cms.getSignerInfos().getSigners().iterator().next();
+//                X509CertificateHolder cert = (X509CertificateHolder) cms.getCertificates().getMatches(signerInfo.getSID())
+//                        .iterator().next();
+//                SignerInformationVerifier verifier = null;
+//                try {
+//                    verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(new BouncyCastleProvider()).build(cert);
+//                } catch (OperatorCreationException e) {
+//                    resultDto.setResult(false);
+//                    resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
+//                    return resultDto;
+//                } catch (CertificateException e) {
+//                    resultDto.setResult(false);
+//                    resultDto.setResultMsg("pdf签章校验异常：" + e.getMessage());
+//                    return resultDto;
+//                }
+//
+//                boolean verifyResult = signerInfo.verify(verifier);
+//                if (verifyResult) {
+//                    resultDto.setResult(true);
+//                    resultDto.setResultMsg("");
+//                    return resultDto;
+//                } else {
+//                    resultDto.setResult(false);
+//                    resultDto.setResultMsg("!!! Signature verification failed!");
+//                    return resultDto;
+//                }
+//            }
+//        }
+//        return resultDto;
+//    }
     public static void mergePdf(String newFilePath, String newFileName, List<String> mergeFilePaths) {
         try {
             File newPath = new File(newFilePath);
@@ -1574,15 +1574,31 @@ public class PDFReaderUtil {
                 newFile.createNewFile();
             }
             PDFMergerUtility PDFMerger = new PDFMergerUtility();
-            PDFMerger.setDestinationFileName(newFilePath + newFileName);
+            //  PDFMerger.setDestinationFileName(newFilePath + newFileName);
             List<PDDocument> documentList = new ArrayList<>();
             for (int i = 0; i < mergeFilePaths.size(); i++) {
                 File file = new File(mergeFilePaths.get(i));
-                PDDocument doc = PDDocument.load(file);
+                PDDocument doc = Loader.loadPDF(file);
                 documentList.add(doc);
                 PDFMerger.addSource(file);
             }
-            PDFMerger.mergeDocuments();
+            //已过时
+            //  PDFMerger.mergeDocuments();
+
+            PDDocument pdDocument = new PDDocument();
+            //使用此方法替换mergeDocuments()方法
+            documentList.forEach(doc -> {
+                //把第二个参数代表的pdf加到第一个参数代表的pdf后面
+                try {
+                    PDFMerger.appendDocument(pdDocument, doc);
+                } catch (IOException e) {
+                    log.error(e.getMessage(), e);
+                    throw new RuntimeException(e);
+                }
+            });
+            //保存
+            pdDocument.save(newFilePath + newFileName);
+
             //合并完成之后关闭doc
             documentList.forEach(doc -> {
                 try {
