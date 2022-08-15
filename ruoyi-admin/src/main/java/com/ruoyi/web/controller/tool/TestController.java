@@ -61,17 +61,12 @@ public class TestController extends BaseController {
 //        System.out.println("====>>>" + strs);
 
         BigDecimal bigDecimal = new BigDecimal("100.9873000");
-        BigDecimal bigDecimal2 = new BigDecimal("100");
-        BigDecimal bigDecimal3 = new BigDecimal("101.1");
 
         DecimalFormat decimalFormat = new DecimalFormat("0.00#####");
         String format = decimalFormat.format(bigDecimal);
-        String format2 = decimalFormat.format(bigDecimal2);
-        String format1 = decimalFormat.format(bigDecimal3);
 
         System.out.println(format);
-        System.out.println(format2);
-        System.out.println(format1);
+
     }
 
     /**
